@@ -18,6 +18,57 @@ db.init_app(app)
 
 api = Api(app)
 
+class Login(Resource):
+    def post(self):
+        user = User.query.filter(
+            User.username == request.get_json()['username']
+        ).first()
+
+        session['user_id'] = user.id
+        user_dict = user.to_dict()
+        response = make_response(
+            jsonify(user_dict)
+        )
+        return response
+api.add_resource(Login, '/login')
+
+class Logout(Resource):
+    def delete(self):
+        session['user_id'] = None
+        response_dict = {
+            "message": "204: No Content"
+        }
+
+        response = make_response(
+            jsonify(response_dict),
+            204
+        )
+        return response
+api.add_resource(Logout,'/logout')
+
+class CheckSession(Resource):
+    def get(self):
+        user = User.query.filter(User.id == session.get('user_id')).first()
+        if user:
+            user_dict = user.to_dict()
+            response = make_response(
+                jsonify(user_dict),
+                200
+            )
+
+            response.headers['Content-type']= 'application/json'
+            return response
+        else:
+            response_dict = {}
+            response = make_response(
+                jsonify(response_dict),
+                401
+            )
+            response.headers['Content-type']= 'application/json'
+            return response
+            
+api.add_resource(CheckSession, '/check_session')
+
 class ClearSession(Resource):
 
     def delete(self):
